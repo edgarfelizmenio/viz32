@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js" charset="utf-8"></script>
+</head>
+
+<body>
+
+<script>
+//Using the SVG Coordinate Space
+var spaceCircles = [30, 70, 110];
+
+var svgContainer = d3.select("body")
+					 .append("svg")
+					 .attr("width", 200)
+					 .attr("height", 200)
+					 .style("border", "1px solid black");						 
+
+var circles = svgContainer.selectAll("circle")
+						  .data(spaceCircles)
+						  .enter()
+						  .append("circle");
+
+var circleAttributes = circles
+                       .attr("cx", function (x) {return x;})
+                       .attr("cy", function (x) {return x;})
+                       .attr("r", 20)
+					   .style("fill", function(d) {
+                         var returnColor;
+                         if (d === 30) {
+							returnColor = "green";
+                         } 
+						 else if (d === 70) { 
+							returnColor = "purple";
+                         } 
+						 else if (d === 110) { 
+						 returnColor = "red"; 
+						 }
+                         return returnColor;
+                       });
+
+//Data Structures D3.js Accepts
+var jsonCircles = [
+   {
+    "x_axis": 30,
+    "y_axis": 30,
+    "radius": 20,
+    "color" : "green"
+   }, {
+    "x_axis": 70,
+    "y_axis": 70,
+   "radius": 20,
+   "color" : "purple"
+  }, {
+   "x_axis": 110,
+   "y_axis": 110,
+   "radius": 20,
+   "color" : "red"
+}];
+
+console.log(jsonCircles);
+console.log(jsonCircles[2].color);
+
+//Using JSON to Simplify Code
+var jsonCircles = [
+{
+"x_axis": 30,
+"y_axis": 30,
+"radius": 20,
+"color": "green"
+}, {
+"x_axis": 70,
+"y_axis": 70,
+"radius": 20,
+"color": "purple"
+}, {
+"x_axis": 110,
+"y_axis": 110,
+"radius": 20,
+"color": "red"
+} ];
+
+var svgContainer = d3.select("body")
+                     .append("svg")
+                     .attr("width", 200)
+                     .attr("height", 200);
+
+var circles = svgContainer.selectAll("circle")
+                          .data(jsonCircles)
+                          .enter()
+                          .append("circle");
+
+var circleAttributes = circles
+                       .attr("cx", function(d) {return d.x_axis})
+                       .attr("cy", function(d) {return d.y_axis})
+                       .attr("r", 20)
+                       .attr("fill", function(d) {return d.color});
+
+//SVG Basic Shapes and D3.js
+/*Circle*/
+var svgContainer = d3.select("body")
+					 .append("svg")
+					 .attr("width", 200)
+					 .attr("height", 200);
+
+var circle = svgContainer.append("circle")
+						 .attr("cx", 50)
+						 .attr("cy", 50)
+						 .attr("r", 50);
+/*Rectangle or Square*/
+var svgContainer = d3.select("body")
+					 .append("svg")
+					 .attr("width", 200)
+					 .attr("height", 200);
+
+var rectangle = svgContainer.append("rect")
+							.attr("x", 20)
+							.attr("y", 20)
+							.attr("width", 100)
+							.attr("height", 50);
+/*Ellipse*/
+var svgContainer = d3.select("body")
+					 .append("svg")
+					 .attr("width", 200)
+					 .attr("height", 200);
+
+var ellipsis = svgContainer.append("ellipse")
+						   .attr("cx", 100)
+						   .attr("cy", 100)
+						   .attr("rx", 50)
+						   .attr("ry", 25);
+/*Straight Line*/
+var svgContainer = d3.select("body")
+					 .append("svg")
+					 .attr("width", 200)
+					 .attr("height", 200);
+
+var straightLine = svgContainer.append("line")
+						   .attr("x1", 25)
+						   .attr("y1", 25)
+						   .attr("x2", 80)
+						   .attr("y2", 100)
+						   .attr("stroke-width", 4)
+						   .attr("stroke", "black");
+
+</script>
+
+<!-- Polylines !-->
+<svg width="50" height="50">
+   <polyline fill="none" stroke="blue" stroke-width="2"
+     points="05,30
+             15,30
+             15,20
+             25,20
+             25,10
+             35,10" />
+ </svg>
+ 
+<!-- Polygons !-->
+<svg width="50" height="50">
+  <polygon fill="yellow" stroke="blue" stroke-width="2"
+    points="05,30
+            15,10
+            25,30" />
+</svg>
+
+</body>
+
+</html>
