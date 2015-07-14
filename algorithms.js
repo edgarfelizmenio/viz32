@@ -1,36 +1,5 @@
 define([], function() {
 
-  function Vertex(name) {
-    this.name = name;
-  }
-
-  function Edge(sourceVertex, destVertex, weight) {
-    this.sourceVertex = sourceVertex;
-    this.destVertex = destVertex;
-    this.weight = weight;
-  }
-
-  function Graph() {
-    this.vertices = [];
-    this.edges = [];
-
-    this.addVertex = function(vertex) {
-      this.vertices.push(vertex);
-    };
-    this.addEdge = function(edge) {
-      this.edges.push(edge);
-    };
-
-    this.getAdjMatrix = function() {
-
-    };
-
-    this.getAdjList = function() {
-
-    };
-
-  }
-
   var algorithms = [{
     value: "Floyd-Warshall Algorithm",
     label: "Floyd-Warshall Algorithm",
