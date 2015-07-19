@@ -161,6 +161,8 @@ function restart() {
     });
 
 
+  console.log(path);
+    console.log(links);
   // add new links
   path.enter().append('svg:path')
     .attr('class', 'link')
@@ -184,10 +186,12 @@ function restart() {
       restart();
     });
 
+    console.log(path);
+      console.log(links);
   // remove old links
   path.exit().remove();
 
-
+console.log(path);
   // circle (node) group
   // NB: the function arg is crucial here! nodes are known by id, not by index!
   circle = circle.data(nodes, function(d) {

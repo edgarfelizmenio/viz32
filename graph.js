@@ -12,14 +12,7 @@ define([], function() {
   function Graph() {
     this.vertices = [];
     this.edges = [];
-
-    this.addVertex = function(vertex) {
-      this.vertices.push(vertex);
-    };
-
-    this.addEdge = function(edge) {
-      this.edges.push(edge);
-    };
+    this.observers = [];
 
     this.getAdjacencyMatrix = function() {
       var matrix = [];
@@ -57,11 +50,24 @@ define([], function() {
     };
 
     this.addVertex = function(name) {
-      this.vertices.push(new Vertex(name));
+      var newVertex = new Vertex(name);
+      console.log("adding vertex", newVertex.name)
+      this.vertices.push(newVertex);
+      this.notifyObservers({
+        message: "new vertex",
+        id: newVertex.name,
+      });
     }
 
     this.addEdge = function(source, dest, weight) {
-      this.edges.push(new Edge(source, dest, weight));
+      var newEdge = new Edge(source, dest, weight)
+      this.edges.push(newEdge);
+      this.notifyObservers({
+        message: "new edge",
+        source: newEdge.sourceVertex,
+        dest: newEdge.destVertex,
+        weight: newEdge.weight,
+      });
     };
 
     this.size = function() {
@@ -76,11 +82,21 @@ define([], function() {
       return this.edges.slice(0);
     }
 
+    this.registerObserver = function(observer) {
+      this.observers.push(observer);
+    }
+
+    this.notifyObservers = function(notification) {
+      for (var i = 0; i < this.observers.length; i++) {
+        if (this.observers[i].update) {
+          this.observers[i].update(notification);
+        }
+      }
+    }
+
   }
 
   return {
-    //Vertex: Vertex,
-    //Edge: Edge,
     Graph: Graph,
   };
 });

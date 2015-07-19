@@ -1,6 +1,6 @@
 requirejs(['d3', 'ui', 'algorithms', 'graph', 'graphui'],
   function(d3, ui, algorithms, graph, graphui) {
-    console.log(ui.canvasWidth);
+    // console.log(ui.canvasWidth);
     var mainHeader = ui.createHeader('Directed Graph Editor', 1);
     var newNodeButton = ui.createButton('newNode', 'Add Node');
     var newNodeTextInput = ui.createTextInput('newNodeValue', 'bucharest');
@@ -15,6 +15,7 @@ requirejs(['d3', 'ui', 'algorithms', 'graph', 'graphui'],
     var canvas = ui.createCanvas(ui.canvasWidth, ui.canvasHeight);
 
     var g = new graph.Graph();
+
     g.addVertex("Frodo");
     g.addVertex("Gandalf");
     g.addVertex("Gimli");
@@ -29,14 +30,13 @@ requirejs(['d3', 'ui', 'algorithms', 'graph', 'graphui'],
     g.addEdge(2, 4, 1);
     g.addEdge(3, 4, 1);
     g.addEdge(4, 5, 2);
-    console.log(g.size());
-    console.log(g.getAdjacencyMatrix());
-    console.log(g.getAdjacencyList());
 
-    var nodes = graphui.createForceNodes(g.getVertices());
-    var links = graphui.createForceLinks(g.getEdges(), nodes);
-
-    //START OF DIRTY CODE
-    gv = new graphui.GraphViz(nodes, links, canvas, ui.canvasWidth, ui.canvasHeight);
+    gv = new graphui.GraphViz(g, canvas, ui.canvasWidth, ui.canvasHeight);
     gv.start();
+
+    g.addVertex("Edgar");
+    g.addEdge(6, 4, 6);
+
+    g.addVertex("Felizmenio");
+    g.addEdge(6, 7, 6);
   });
