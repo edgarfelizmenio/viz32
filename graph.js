@@ -1,4 +1,13 @@
 define([], function() {
+
+
+  var GraphEvent = {
+    NEW_VERTEX: 0,
+    DELETE_VERTEX: 1,
+    NEW_EDGE: 2,
+    DELETE_EDGE: 3,
+  };
+
   function Vertex(name) {
     this.name = name;
   }
@@ -50,11 +59,18 @@ define([], function() {
     };
 
     this.addVertex = function(name) {
+      for (var i = 0; i < this.vertices.length; i++) {
+        if (this.vertices[i].name == name) {
+          alert("Vertex " + name + " already exists.");
+          return;
+        }
+      }
+
       var newVertex = new Vertex(name);
-      console.log("adding vertex", newVertex.name)
+
       this.vertices.push(newVertex);
       this.notifyObservers({
-        message: "new vertex",
+        message: GraphEvent.NEW_VERTEX,
         id: newVertex.name,
       });
     }
@@ -63,7 +79,7 @@ define([], function() {
       var newEdge = new Edge(source, dest, weight)
       this.edges.push(newEdge);
       this.notifyObservers({
-        message: "new edge",
+        message: GraphEvent.NEW_EDGE,
         source: newEdge.sourceVertex,
         dest: newEdge.destVertex,
         weight: newEdge.weight,
@@ -98,5 +114,6 @@ define([], function() {
 
   return {
     Graph: Graph,
+    GraphEvent: GraphEvent,
   };
 });

@@ -1,6 +1,4 @@
-define(['d3', 'graph'], function(d3, graph) {
-
-
+define(['d3', 'graph', 'algorithms'], function(d3, graph, algorithms) {
 
   function createForceNodes(vertices) {
     var forceNodes = [];
@@ -23,7 +21,7 @@ define(['d3', 'graph'], function(d3, graph) {
         source: nodes[e.sourceVertex],
         target: nodes[e.destVertex],
         weight: e.weight,
-        id: nodes[e.sourceVertex].id + "-" + nodes[e.destVertex].id +
+        id: e.sourceVertex + "->" + e.destVertex +
           "-" + e.weight,
       });
     }
@@ -45,7 +43,7 @@ define(['d3', 'graph'], function(d3, graph) {
 
     this.start = function() {
       //initialize markers
-      createMarker(this.canvas);
+      initializeArrowhead(this.canvas);
       this.resetNodeAttributes();
       this.resetLinkAttributes();
 
@@ -54,17 +52,19 @@ define(['d3', 'graph'], function(d3, graph) {
         .nodes(this.nodes)
         .links(this.links)
         .size([width, height])
-        .linkDistance(150)
+        .linkDistance(function(d) {
+          return d.weight * 50;
+        })
         .gravity(0.0625)
-        .charge(-500);
+        .charge(-3000);
 
       this.restartForce();
     };
 
     this.draw = function() {
-      function calculateTriangleValues(d) {
-        var adj = d.target.x - d.source.x;
-        var opp = d.target.y - d.source.y;
+      function calculateTriangleValues(x1, y1, x2, y2) {
+        var adj = x2 - x1;
+        var opp = y2 - y1;
 
         var hyp = Math.sqrt(adj * adj + opp * opp);
         var cos = adj / hyp;
@@ -77,40 +77,74 @@ define(['d3', 'graph'], function(d3, graph) {
       }
 
       function drawLine(d) {
-        //add proper allowance so that the lines are not covered with circles
-        triangle = calculateTriangleValues(d);
+        var sourceX = Math.max(this.nodeRadius, Math.min(width - this.nodeRadius, d.source.x));
+        var sourceY = Math.max(this.nodeRadius, Math.min(height - this.nodeRadius, d.source.y));
+        var targetX = Math.max(this.nodeRadius, Math.min(width - this.nodeRadius, d.target.x));
+        var targetY = Math.max(this.nodeRadius, Math.min(height - this.nodeRadius, d.target.y));
 
-        var sourceX = d.source.x + (this.nodeRadius * triangle.cos);
-        var sourceY = d.source.y + (this.nodeRadius * triangle.sin);
-        var targetX = d.target.x - (this.nodeRadius * triangle.cos);
-        var targetY = d.target.y - (this.nodeRadius * triangle.sin);
+        if (d.source == d.target) {
+          var arcString = 'M' + (sourceX - this.nodeRadius) + ',' + sourceY + 'A' +
+            (this.nodeRadius) + ',' + (this.nodeRadius) +
+            ',0,1,0,' + sourceX + ',' + (sourceY + this.nodeRadius);
+          return arcString;
+        }
+
+        var triangle = calculateTriangleValues(sourceX, sourceY, targetX, targetY);
+        var allowance = this.nodeRadius + 3;
+        sourceX = sourceX + (allowance * triangle.cos);
+        sourceY = sourceY + (allowance * triangle.sin);
+        targetX = targetX - (allowance * triangle.cos);
+        targetY = targetY - (allowance * triangle.sin);
 
         return 'M' + sourceX + ',' + sourceY + 'L' + targetX + ',' +
           targetY;
       }
 
+      function drawNode(d) {
+        var posX = Math.max(this.nodeRadius, Math.min(width - this.nodeRadius, d.x));
+        var posY = Math.max(this.nodeRadius, Math.min(height - this.nodeRadius, d.y));
+        return 'translate(' + posX + ',' + posY + ')';
+      }
+
+      function drawEdgeWeight(d) {
+        var sourceX = Math.max(15, Math.min(width, d.source.x));
+        var sourceY = Math.max(15, Math.min(height, d.source.y));
+        var targetX = Math.max(15, Math.min(width, d.target.x));
+        var targetY = Math.max(15, Math.min(height, d.target.y));
+        var weightX = 0;
+        var weightY = 0;
+
+
+        var triangle = calculateTriangleValues(sourceX, sourceY, targetX, targetY);
+        var textPosition = triangle.hyp / 2;
+
+        if (d.source == d.target) {
+          weightX = Math.max(15, Math.min(width, sourceX - (2 * this.nodeRadius)));
+          weightY = Math.max(15, Math.min(height, sourceY + (2 * this.nodeRadius)));
+        } else {
+          weightX = Math.max(15, Math.min(width, sourceX + (textPosition * triangle.cos)));
+          weightY = Math.max(15, Math.min(height, sourceY + (textPosition * triangle.sin)));
+        }
+        return 'translate(' + weightX + ',' + weightY + ')';
+      }
+
       // draw path for each link
       this.pathGroup.select('path').attr('d', drawLine.bind({
-        nodeRadius: this.nodeRadius + 3
+        nodeRadius: this.nodeRadius,
       }));
 
-      this.pathGroup.select('text').attr('transform', function(d) {
-        triangle = calculateTriangleValues(d);
+      this.pathGroup.select('text').attr('transform', drawEdgeWeight.bind({
+        nodeRadius: this.nodeRadius,
+      }));
 
-        var weightX = d.source.x + ((triangle.hyp / 2) * triangle.cos);
-        var weightY = d.source.y + ((triangle.hyp / 2) * triangle.sin);
-
-        return 'translate(' + weightX + ',' + weightY + ')';
-      })
-
-      //draw circle for each node
-      this.nodeGroup.attr('transform', function(d) {
-        // console.log("translating to: ", d.x, d.y)
-        return 'translate(' + d.x + ',' + d.y + ')';
-      });
+      //draw circle and text for each node
+      this.nodeGroup.attr('transform', drawNode.bind({
+        nodeRadius: this.nodeRadius,
+      }));
     }
 
     this.update = function(updateObject) {
+
       this.dispatchNotification(updateObject);
       this.resetNodeAttributes();
       this.resetLinkAttributes();
@@ -120,22 +154,25 @@ define(['d3', 'graph'], function(d3, graph) {
     // AUXILLARY METHODS FOR GRAPH VISUALIZATION
     this.dispatchNotification = function(notification) {
       switch (notification.message) {
-        case "new vertex":
+        case graph.GraphEvent.NEW_VERTEX:
           this.nodes.push({
             id: notification.id,
           });
           break;
-        case "new edge":
-          console.log(notification);
+        case graph.GraphEvent.NEW_EDGE:
           this.links.push({
             source: this.nodes[notification.source],
             target: this.nodes[notification.dest],
             weight: notification.weight,
-            id: this.nodes[notification.source].id +
-              "-" + this.nodes[notification.dest].id +
+            id: notification.source +
+              "->" + notification.dest +
               "-" + notification.weight,
           });
           break;
+        case "deleted vertex":
+        case "deleted edge":
+        case "updated vertex":
+        case "updated edge":
         default:
           break;
       }
@@ -148,6 +185,14 @@ define(['d3', 'graph'], function(d3, graph) {
         nodeRadius: this.nodeRadius
       }));
 
+      this.force.start();
+    }
+
+    this.stopForce = function() {
+      this.force.stop();
+    }
+
+    this.startForce = function() {
       this.force.start();
     }
 
@@ -179,21 +224,94 @@ define(['d3', 'graph'], function(d3, graph) {
 
       // initialize link attributes
       this.path = this.pathGroup.enter().append('svg:g');
-      this.path.append('svg:path').attr('stroke', 'black')
+      this.path.append('svg:path').attr('stroke', 'black').attr('fill-opacity', 0)
         .attr('stroke-width', '2px').style('marker-end', function() {
           return 'url(#arrowhead)';
         });
-      this.path.append('svg:text').attr('stroke', 'green').text(function(d) {
-        return d.weight;
-      });
+      this.path.append('svg:text').attr('stroke', 'green')
+        .attr('fill', 'green').text(function(d) {
+          return d.weight;
+        });
 
       this.pathGroup.exit().remove();
     }
 
+    this.animate = function(transitionSequence) {
+      var ga = new GraphAnimator(this);
+      ga.animate(transitionSequence);
+    }
+
+    this.changeColor = function(target, color, callback) {
+      var tn = this.nodeGroup.filter(function(d, i) {
+        return i == target;
+      });
+      tn.transition().duration(500).delay(500).select('circle').attr("fill", color)
+        .each("end", callback);
+    }
+
+    this.changeEdge = function(target, callback) {
+      var tn = this.pathGroup.filter(function(d, i) {
+        console.log(d.id);
+        return d.id == target;
+      });
+      tn.transition().duration(500).delay(500).select('path').attr("stroke-width", "4px");
+      if (callback) {
+        tn.each("end", callback);
+      }
+    }
+
   }
 
+  function GraphAnimator(graphViz) {
+    this.graphViz = graphViz;
+
+    this.animate = function(transitionSequence) {
+      this.graphViz.stopForce();
+      console.log("Animating...");
+
+      function runTransition(graphViz, transitionSequence, index, callback) {
+        console.log("graphViz", graphViz);
+        console.log("index", index);
+        console.log(transitionSequence);
+        console.log(index, transitionSequence[index].transition);
+        switch (transitionSequence[index].transition) {
+          case algorithms.transitionCode.VISIT:
+            console.log("visit...");
+            graphViz.changeColor(transitionSequence[index].target, "green", callback);
+            break;
+          case algorithms.transitionCode.TRAVERSE:
+            graphViz.changeEdge(transitionSequence[index].source + "->" + transitionSequence[index].target + "-" + transitionSequence[index].weight);
+            graphViz.changeColor(transitionSequence[index].target, "black", callback);
+          case algorithms.transitionCode.ENQUEUE:
+            graphViz.changeColor(transitionSequence[index].target, "blue", callback);
+            break;
+          default:
+            break;
+        }
+      }
+
+      function nextTransition() {
+        if (this.index + 1 < transitionSequence.length) {
+          console.log("graphViz", graphViz);
+          runTransition(graphViz, transitionSequence, this.index + 1, nextTransition.bind({
+            transitionSequence: transitionSequence,
+            index: this.index + 1,
+          }));
+        } else {
+          gv.startForce();
+        }
+      }
+
+      console.log("runnign transition...");
+      runTransition(this.graphViz, transitionSequence, 0, nextTransition.bind({
+        index: 0,
+        transitionSequence: transitionSequence,
+      }));
+    }
+
+  }
   // AUXILLARY FUNCTIONS
-  function createMarker(canvas) {
+  function initializeArrowhead(canvas) {
     canvas.append('svg:defs').append('svg:marker').attr('id', 'arrowhead')
       .attr('viewBox', '0 -5 10 10')
       .attr('refX', 6)
